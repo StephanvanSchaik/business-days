@@ -111,6 +111,7 @@ pub fn get_good_friday(year: i16) -> Result<Date, Error> {
 pub enum Holiday<T: Clone + std::fmt::Debug + std::fmt::Display> {
     Holiday(T),
     Observed(T),
+    HalfDay(T),
 }
 
 impl<T: Clone + std::fmt::Debug + std::fmt::Display> std::fmt::Display for Holiday<T> {
@@ -118,6 +119,7 @@ impl<T: Clone + std::fmt::Debug + std::fmt::Display> std::fmt::Display for Holid
         match self {
             Self::Holiday(holiday) => write!(f, "{holiday}"),
             Self::Observed(holiday) => write!(f, "{holiday} (Observed)"),
+            Self::HalfDay(holiday) => write!(f, "{holiday}"),
         }
     }
 }
@@ -132,11 +134,19 @@ impl<T: Clone + std::fmt::Debug + std::fmt::Display> Holiday<T> {
     pub fn is_observed(&self) -> bool {
         matches!(self, Self::Observed(..))
     }
+
+    /// Returns `true` if the day is a half-day. Returns `false` otherwise.
+    pub fn is_half_day(&self) -> bool {
+        matches!(self, Self::HalfDay(..))
+    }
 }
 
 pub trait Calendar<T: Clone + std::fmt::Debug + std::fmt::Display + 'static> {
     /// The array of functions used to calculate the date of a holiday for a given year.
     const HOLIDAYS: &[(HolidayDate, T)];
+
+    /// The array of functions used to calculate the date of a half-day for a given year.
+    const HALF_DAYS: &[(HolidayDate, T)] = &[];
 
     /// Returns `true` if the given date is on a weekday. Returns `false` otherwise.
     fn is_weekday(&self, date: Date) -> bool;
@@ -206,6 +216,16 @@ pub trait Calendar<T: Clone + std::fmt::Debug + std::fmt::Display + 'static> {
             }
         }
 
+        for (f, result) in Self::HALF_DAYS {
+            let Ok(half_day) = f(date.year()) else {
+                continue;
+            };
+
+            if half_day == date {
+                return Some(Holiday::HalfDay(result.clone()));
+            }
+        }
+
         None
     }
 
@@ -224,10 +244,21 @@ pub trait Calendar<T: Clone + std::fmt::Debug + std::fmt::Display + 'static> {
             .unwrap_or(false)
     }
 
+    /// Returns `true` if the given date is a half day. Returns `false` otherwise.
+    fn is_half_day(&self, date: Date) -> bool {
+        self.get_holiday(date)
+            .map(|holiday| holiday.is_half_day())
+            .unwrap_or(false)
+    }
+
     /// Returns `true` if the given date is a business day, i.e., if the given date is neither a
     /// holiday nor the observance day for a holiday. Returns `false` otherwise.
     fn is_business_day(&self, date: Date) -> bool {
-        self.is_weekday(date) && self.get_holiday(date).is_none()
+        self.is_weekday(date)
+            && !self
+                .get_holiday(date)
+                .map(|holiday| holiday.is_holiday() || holiday.is_observed())
+                .unwrap_or(false)
     }
 
     /// Returns the next consecutive business day for the given date.
@@ -275,6 +306,7 @@ pub enum UsHoliday {
     PresidentDay,
     GoodFriday,
     Easter,
+    DayBeforeIndependenceDay,
     IndependenceDay,
     MemorialDay,
     Juneteenth,
@@ -282,6 +314,8 @@ pub enum UsHoliday {
     ColumbusDay,
     VeteransDay,
     Thanksgiving,
+    ThanksgivingBridgeDay,
+    ChristmasEve,
     Christmas,
 }
 
@@ -296,6 +330,7 @@ impl std::fmt::Display for UsHoliday {
                 Self::PresidentDay => "President's Day",
                 Self::GoodFriday => "Good Friday",
                 Self::Easter => "Easter",
+                Self::DayBeforeIndependenceDay => "Day before Independence Day",
                 Self::IndependenceDay => "Independence Day",
                 Self::MemorialDay => "Memorial Day",
                 Self::Juneteenth => "Juneteenth",
@@ -303,6 +338,8 @@ impl std::fmt::Display for UsHoliday {
                 Self::ColumbusDay => "Columbus Day",
                 Self::VeteransDay => "Veterans Day",
                 Self::Thanksgiving => "Thanksgiving",
+                Self::ThanksgivingBridgeDay => "Day after Thanksgiving",
+                Self::ChristmasEve => "Christmas Eve",
                 Self::Christmas => "Christmas",
             }
         )
@@ -326,6 +363,18 @@ impl Calendar<UsHoliday> for UsCalendar {
         (get_veterans_day, UsHoliday::VeteransDay),
         (get_thanksgiving_day, UsHoliday::Thanksgiving),
         (get_christmas_day, UsHoliday::Christmas),
+    ];
+
+    const HALF_DAYS: &[(HolidayDate, UsHoliday)] = &[
+        (
+            get_day_before_independence_day,
+            UsHoliday::DayBeforeIndependenceDay,
+        ),
+        (
+            get_thanksgiving_bridge_day,
+            UsHoliday::ThanksgivingBridgeDay,
+        ),
+        (get_christmas_eve, UsHoliday::ChristmasEve),
     ];
 
     fn is_weekday(&self, date: Date) -> bool {
