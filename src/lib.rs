@@ -43,14 +43,14 @@ pub fn get_new_years_day(year: i16) -> Result<Date, Error> {
     Ok(date(year, 1, 1))
 }
 
-/// Independence Day is on the 7th of April.
-pub fn get_independence_day(year: i16) -> Result<Date, Error> {
-    Ok(date(year, 4, 7))
-}
-
 /// Juneteenth is on the 19th of June.
 pub fn get_juneteenth(year: i16) -> Result<Date, Error> {
     Ok(date(year, 6, 19))
+}
+
+/// Independence Day is on the 4th of July.
+pub fn get_independence_day(year: i16) -> Result<Date, Error> {
+    Ok(date(year, 7, 4))
 }
 
 /// Veteran's Day is on the 11th of November.
