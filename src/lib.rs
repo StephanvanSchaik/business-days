@@ -38,6 +38,11 @@ pub fn get_thanksgiving_day(year: i16) -> Result<Date, Error> {
     Ok(date(year, 11, 1).nth_weekday_of_month(4, Weekday::Thursday)?)
 }
 
+/// Thanksgiving has a bridge day on the Friday after Thanksgiving.
+pub fn get_thanksgiving_bridge_day(year: i16) -> Result<Date, Error> {
+    Ok(date(year, 11, 1).nth_weekday_of_month(4, Weekday::Friday)?)
+}
+
 /// New Years Day is on the 1st of January.
 pub fn get_new_years_day(year: i16) -> Result<Date, Error> {
     Ok(date(year, 1, 1))
@@ -48,6 +53,11 @@ pub fn get_juneteenth(year: i16) -> Result<Date, Error> {
     Ok(date(year, 6, 19))
 }
 
+/// The Day before Independence Day is on the 3th of July.
+pub fn get_day_before_independence_day(year: i16) -> Result<Date, Error> {
+    Ok(date(year, 7, 3))
+}
+
 /// Independence Day is on the 4th of July.
 pub fn get_independence_day(year: i16) -> Result<Date, Error> {
     Ok(date(year, 7, 4))
@@ -56,6 +66,11 @@ pub fn get_independence_day(year: i16) -> Result<Date, Error> {
 /// Veteran's Day is on the 11th of November.
 pub fn get_veterans_day(year: i16) -> Result<Date, Error> {
     Ok(date(year, 11, 11))
+}
+
+/// Christmas Eve is the day before Christmas Day.
+pub fn get_christmas_eve(year: i16) -> Result<Date, Error> {
+    Ok(date(year, 12, 24))
 }
 
 /// Christmas Day is on the 25th of December.
